@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "api/index.js",
   "scripts": {
-    "start": "node backend/server.js"
+    "start": "scripts\\start-local-dev.cmd"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -19,6 +19,7 @@
     "mysql2": "^3.11.3",
     "nodemailer": "^6.9.15",
     "pdfkit": "^0.15.0",
+    "pg": "^8.21.0",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.4"
   }

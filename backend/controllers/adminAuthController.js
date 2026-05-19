@@ -1,6 +1,7 @@
 const db = require("../db/connection");
 const util = require("util");
 const { sendOtpEmail } = require("../utils/emailOtpSender");
+const { buildAuthSession, ROLE_ADMIN } = require("../utils/authTokens");
 
 const query = util.promisify(db.query).bind(db);
 
@@ -101,10 +102,19 @@ exports.verifyAdminOtp = async (req, res) => {
 
     await query("DELETE FROM otp_verifications WHERE id = ?", [record.id]);
 
+    const session = buildAuthSession({
+      role: ROLE_ADMIN,
+      id: "admin",
+      email: ADMIN_EMAIL,
+      name: "Admin"
+    });
+
     return res.json({
       success: true,
       message: "Admin OTP verified",
-      admin_email: ADMIN_EMAIL
+      admin_email: ADMIN_EMAIL,
+      token: session.token,
+      auth: session
     });
   } catch (err) {
     console.error("ADMIN OTP VERIFY ERROR:", err);

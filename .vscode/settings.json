@@ -1,10 +1,6 @@
 {
     "sqltools.connections": [
         {
-            "mysqlOptions": {
-                "authProtocol": "default",
-                "enableSsl": "Disabled"
-            },
             "ssh": "Disabled",
             "previewLimit": 50,
             "server": "localhost",

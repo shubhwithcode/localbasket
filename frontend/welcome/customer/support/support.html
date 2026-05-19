@@ -1,8 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/js/config.js"></script>
-<base href="/" />
+  <script>
+    (function () {
+      var path = String(window.location.pathname || "").replace(/\\/g, "/");
+      var basePath = path.indexOf("/frontend/") !== -1 ? "/frontend/" : "/";
+      var baseEl = document.createElement("base");
+      baseEl.href = basePath;
+      document.head.appendChild(baseEl);
+      window.LB_BASE_PATH = basePath.replace(/\/$/, "");
+    })();
+  </script>
+  <script src="js/config.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Support | LocalBasket</title>
@@ -10,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/css/header-footer.css" />
+  <link rel="stylesheet" href="css/header-footer.css" />
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Plus Jakarta Sans", sans-serif; }
@@ -204,8 +213,8 @@
       <p>Need help with orders, account, or seller connection? We are here to assist you quickly.</p>
       <div class="support-actions">
         <a class="support-btn primary" href="tel:+918000000000">Call Support</a>
-        <a class="support-btn" href="https://wa.me/918000000000" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-        <a class="support-btn" href="mailto:support@localbasket.in">Email Us</a>
+        <a class="support-btn" href="https://wa.me/919137666909" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a class="support-btn" href="mailto:localbasket.helpdesk@gmail.com">Email Us</a>
       </div>
     </section>
 

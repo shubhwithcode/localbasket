@@ -4,6 +4,7 @@ const router = express.Router();
 const upload = require("../middlewares/upload");
 const db = require("../db/connection");
 const { uploadToCloudinary, hasCloudinary } = require("../config/cloudinary");
+const { requireSellerAuth, attachSellerId } = require("../middlewares/auth");
 
 /* ================= CONTROLLER ================= */
 const sellerController = require("../controllers/sellerController");
@@ -60,9 +61,9 @@ router.put(
 ===================================================== */
 
 // PUT /api/seller/status
-router.put("/status", updateStatus);
-router.post("/update-profile", upload.any(), updateProfile);
-router.post("/remove-store-image", removeStoreImage);
+router.put("/status", requireSellerAuth, attachSellerId, updateStatus);
+router.post("/update-profile", requireSellerAuth, attachSellerId, upload.any(), updateProfile);
+router.post("/remove-store-image", requireSellerAuth, attachSellerId, removeStoreImage);
 
 /* =====================================================
    3️⃣ PRODUCT MANAGEMENT
@@ -71,13 +72,15 @@ router.post("/remove-store-image", removeStoreImage);
 // ADD PRODUCT
 router.post(
   "/products",
+  requireSellerAuth,
+  attachSellerId,
   upload.array("image", 8),
   addProduct
 );
 
 // GET SELLER PRODUCTS
 // GET /api/seller/products?seller_id=1
-router.get("/products", getMyProducts);
+router.get("/products", requireSellerAuth, attachSellerId, getMyProducts);
 
 // UPDATE PRODUCT (supports unit + optional image update)
 const getUploadedFilesByNames = (req, fieldNames = []) => {
@@ -117,9 +120,10 @@ const hydrateRouteFilesWithCloudinary = async (req) => {
   }));
 };
 
-router.put("/products/:id", upload.array("image", 8), async (req, res) => {
+router.put("/products/:id", requireSellerAuth, upload.array("image", 8), async (req, res) => {
   const productId = Number(req.params.id);
   const { name, price, stock, mrp, unit } = req.body;
+  const sellerId = Number(req.auth?.id || 0);
 
   if (!productId || !name || price === undefined || stock === undefined || !unit) {
     return res.status(400).json({
@@ -164,8 +168,8 @@ router.put("/products/:id", upload.array("image", 8), async (req, res) => {
     }
   }
 
-  const sql = `UPDATE products SET ${setCols.join(", ")} WHERE id = ?`;
-  params.push(productId);
+  const sql = `UPDATE products SET ${setCols.join(", ")} WHERE id = ? AND seller_id = ?`;
+  params.push(productId, sellerId);
 
   try {
     const [result] = await db.promise().query(sql, params);
@@ -189,8 +193,9 @@ router.put("/products/:id", upload.array("image", 8), async (req, res) => {
 });
 
 // DELETE PRODUCT
-router.delete("/products/:id", (req, res) => {
+router.delete("/products/:id", requireSellerAuth, (req, res) => {
   const productId = Number(req.params.id);
+  const sellerId = Number(req.auth?.id || 0);
 
   if (!productId) {
     return res.status(400).json({
@@ -200,8 +205,8 @@ router.delete("/products/:id", (req, res) => {
   }
 
   db.query(
-    "DELETE FROM products WHERE id = ?",
-    [productId],
+    "DELETE FROM products WHERE id = ? AND seller_id = ?",
+    [productId, sellerId],
     (err, result) => {
       if (err) {
         console.error("❌ DELETE PRODUCT ERROR:", err.sqlMessage);
@@ -231,14 +236,14 @@ router.delete("/products/:id", (req, res) => {
 ===================================================== */
 
 // GET /api/seller/dashboard/:id
-router.get("/dashboard/:id", getDashboard);
+router.get("/dashboard/:id", requireSellerAuth, attachSellerId, getDashboard);
 
 /* =====================================================
    5️⃣ SELLER ORDERS (JSON CART SUPPORT)
 ===================================================== */
 
 // GET /api/seller/orders/:sellerId
-router.get("/orders/:sellerId", (req, res) => {
+router.get("/orders/:sellerId", requireSellerAuth, attachSellerId, (req, res) => {
   const sellerIdNum = Number(req.params.sellerId);
   const sellerIdStr = String(req.params.sellerId);
 
@@ -270,20 +275,16 @@ router.get("/orders/:sellerId", (req, res) => {
       created_at,
       cart
     FROM orders
-    WHERE
-      JSON_CONTAINS(
-        JSON_EXTRACT(cart, '$[*].seller_id'),
-        CAST(? AS JSON)
-      )
-      OR
-      JSON_CONTAINS(
-        JSON_EXTRACT(cart, '$[*].storeId'),
-        JSON_QUOTE(?)
-      )
+    WHERE EXISTS (
+      SELECT 1
+      FROM jsonb_array_elements(COALESCE(cart::jsonb, '[]'::jsonb)) AS item
+      WHERE item->>'seller_id' = ?
+         OR item->>'storeId' = ?
+    )
     ORDER BY created_at DESC
   `;
 
-  db.query(sql, [sellerIdNum, sellerIdStr], (err, rows) => {
+  db.query(sql, [String(sellerIdNum), sellerIdStr], (err, rows) => {
     if (err) {
       console.error("❌ SELLER ORDERS ERROR:", err.sqlMessage);
       return res.status(500).json({
@@ -312,8 +313,9 @@ router.get("/orders/:sellerId", (req, res) => {
 ===================================================== */
 
 // PUT /api/seller/orders/:orderId/status
-router.put("/orders/:orderId/status", (req, res) => {
+router.put("/orders/:orderId/status", requireSellerAuth, (req, res) => {
   const orderId = Number(req.params.orderId);
+  const sellerId = Number(req.auth?.id || 0);
   const {
     status,
     status_updated_by,
@@ -360,7 +362,7 @@ router.put("/orders/:orderId/status", (req, res) => {
       reject_reason = COALESCE(?, reject_reason),
       rejection_reason = COALESCE(?, rejection_reason),
       cancellation_reason = COALESCE(?, cancellation_reason)
-    WHERE id = ?
+    WHERE id = ? AND seller_id = ?
   `;
 
   const normalizedStatus = String(status).toUpperCase();
@@ -390,8 +392,8 @@ router.put("/orders/:orderId/status", (req, res) => {
 
   if (isTruthy(collect_cash)) {
     return db.query(
-      "SELECT status, payment_method, payment_status FROM orders WHERE id = ? LIMIT 1",
-      [orderId],
+      "SELECT status, payment_method, payment_status FROM orders WHERE id = ? AND seller_id = ? LIMIT 1",
+      [orderId, sellerId],
       (err0, rows0) => {
         if (err0) {
           console.error("âŒ COLLECT CASH FETCH ERROR:", err0.sqlMessage || err0.message || err0);
@@ -415,8 +417,8 @@ router.put("/orders/:orderId/status", (req, res) => {
         }
 
         return db.query(
-          "UPDATE orders SET status = 'COLLECT_CASH', payment_status = 'PAID', status_updated_by = COALESCE(?, status_updated_by) WHERE id = ?",
-          [status_updated_by || "SELLER", orderId],
+          "UPDATE orders SET status = 'COLLECT_CASH', payment_status = 'PAID', status_updated_by = COALESCE(?, status_updated_by) WHERE id = ? AND seller_id = ?",
+          [status_updated_by || "SELLER", orderId, sellerId],
           (err1, result) => {
             if (err1) {
               console.error("âŒ COLLECT CASH UPDATE ERROR:", err1.sqlMessage || err1.message || err1);
@@ -439,8 +441,8 @@ router.put("/orders/:orderId/status", (req, res) => {
     }
 
     return db.query(
-      "SELECT delivery_otp, payment_method, payment_status FROM orders WHERE id = ? LIMIT 1",
-      [orderId],
+      "SELECT delivery_otp, payment_method, payment_status FROM orders WHERE id = ? AND seller_id = ? LIMIT 1",
+      [orderId, sellerId],
       (err0, rows0) => {
         if (err0) {
           console.error("❌ DELIVERY OTP FETCH ERROR:", err0.sqlMessage || err0.message || err0);
@@ -483,7 +485,7 @@ router.put("/orders/:orderId/status", (req, res) => {
             delivered_at = NOW(),
             delivery_otp_verified_at = NOW(),
             delivery_otp = NULL
-          WHERE id = ?
+          WHERE id = ? AND seller_id = ?
         `;
 
         return db.query(
@@ -505,7 +507,8 @@ router.put("/orders/:orderId/status", (req, res) => {
             inferredRejectionReason,
             inferredCancellationReason,
             nextPaymentStatus,
-            orderId
+            orderId,
+            sellerId
           ],
           (err1, result) => {
             if (err1) {
@@ -540,7 +543,8 @@ router.put("/orders/:orderId/status", (req, res) => {
       inferredRejectReason,
       inferredRejectionReason,
       inferredCancellationReason,
-      orderId
+      orderId,
+      sellerId
     ],
     (err, result) => {
     if (err) {
@@ -567,7 +571,7 @@ router.put("/orders/:orderId/status", (req, res) => {
 });
 
 // GET /api/seller/feedback/:sellerId
-router.get("/feedback/:sellerId", (req, res) => {
+router.get("/feedback/:sellerId", requireSellerAuth, attachSellerId, (req, res) => {
   const sellerId = Number(req.params.sellerId);
   if (!sellerId) {
     return res.status(400).json({ success: false, feedback: [], message: "Invalid seller id" });

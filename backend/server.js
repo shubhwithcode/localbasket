@@ -160,8 +160,22 @@ app.use((err, req, res, next) => {
 
 if (require.main === module) {
   const port = Number(process.env.PORT || 5000);
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     console.log(`LocalBasket server listening on http://localhost:${port}`);
+  });
+
+  server.on("error", (error) => {
+    if (error && error.code === "EADDRINUSE") {
+      console.error(
+        `Port ${port} is already in use. Stop the existing process on port ${port} or start this app with a different PORT value.`
+      );
+      console.error(
+        "This project's frontend currently assumes localhost:5000, so freeing port 5000 is the safer fix."
+      );
+      process.exit(1);
+    }
+
+    throw error;
   });
 }
 

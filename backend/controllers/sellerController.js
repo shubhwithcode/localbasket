@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const { uploadToCloudinary, hasCloudinary } = require("../config/cloudinary");
 const { sendOtpSms } = require("../utils/otpSender");
 const { sendOtpEmail } = require("../utils/emailOtpSender");
+const { buildAuthSession, ROLE_SELLER } = require("../utils/authTokens");
 const dbp = db.promise();
 const query = dbp.query.bind(dbp);
 let sellerColumnsCache = null;
@@ -296,11 +297,21 @@ const buildSellerLoginPayload = (seller) => {
   };
   }
 
+  const session = buildAuthSession({
+    role: ROLE_SELLER,
+    id: seller.id,
+    phone: seller.phone,
+    email: seller.email,
+    name: seller.owner_name || seller.store_name
+  });
+
   return {
     statusCode: 200,
     payload: {
       success: true,
       status: "APPROVED",
+      token: session.token,
+      auth: session,
       seller: {
         id: seller.id,
         store_name: seller.store_name,
@@ -1269,17 +1280,14 @@ exports.getDashboard = async (req, res) => {
         SELECT COUNT(*) AS total
         FROM orders
         WHERE
-          JSON_CONTAINS(
-            JSON_EXTRACT(cart, '$[*].seller_id'),
-            CAST(? AS JSON)
-          )
-          OR
-          JSON_CONTAINS(
-            JSON_EXTRACT(cart, '$[*].storeId'),
-            JSON_QUOTE(?)
+          EXISTS (
+            SELECT 1
+            FROM jsonb_array_elements(COALESCE(cart::jsonb, '[]'::jsonb)) AS item
+            WHERE item->>'seller_id' = ?
+               OR item->>'storeId' = ?
           )
         `,
-        [sellerIdNum, sellerIdStr],
+        [String(sellerIdNum), sellerIdStr],
         (err, rows) => {
           if (err) return reject(err);
           resolve(rows[0].total);

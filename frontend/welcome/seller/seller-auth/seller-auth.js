@@ -35,6 +35,15 @@ const fetchJson = async (url, options) => {
   return data;
 };
 
+const persistSellerSession = (seller, data) => {
+  const nextSeller = seller && typeof seller === "object" ? { ...seller } : {};
+  const token = String(data?.token || data?.auth?.token || "").trim();
+  if (token) nextSeller.token = token;
+  if (data?.auth?.expires_at) nextSeller.token_expires_at = data.auth.expires_at;
+  localStorage.setItem("lbSeller", JSON.stringify(nextSeller));
+  if (token) localStorage.setItem("lbSellerToken", token);
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("authForm");
   const toggleBtn = document.getElementById("toggleBtn");
@@ -336,7 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
         showStatusPanel("REJECTED", seller);
         break;
       case "APPROVED":
-        localStorage.setItem("lbSeller", JSON.stringify(seller));
+        persistSellerSession(seller, data);
         window.location.href = "/welcome/seller/seller-dashboard.html";
         break;
       default:

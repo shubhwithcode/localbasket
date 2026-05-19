@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/js/config.js"></script>
-<base href="/" />
+  <script>
+    (function () {
+      var path = String(window.location.pathname || "").replace(/\\/g, "/");
+      var basePath = path.indexOf("/frontend/") !== -1 ? "/frontend/" : "/";
+      var baseEl = document.createElement("base");
+      baseEl.href = basePath;
+      document.head.appendChild(baseEl);
+      window.LB_BASE_PATH = basePath.replace(/\/$/, "");
+    })();
+  </script>
+  <script src="js/config.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LocalBasket | Your Neighborhood, Digitalized</title>
 
-<link rel="stylesheet" href="/css/header-footer.css">
+<link rel="stylesheet" href="css/header-footer.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -932,10 +941,10 @@
             display: none;
         }
         .tool-select {
-            border: 1px solid #c7d2e3;
-            border-radius: 15px;
-            background: #ffffff;
-            padding: 11px 42px 11px 16px;
+            border: 1px solid #d6deea;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            padding: 12px 46px 12px 16px;
             font-size: 13px;
             font-weight: 700;
             color: #1e293b;
@@ -950,18 +959,19 @@
             background-position: right 16px center;
             background-size: 12px;
             cursor: pointer;
-            box-shadow: 0 10px 20px -16px rgba(30, 41, 59, 0.45);
-            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 14px 28px -22px rgba(15, 23, 42, 0.42);
+            transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
         .tool-select:hover {
-            border-color: #94a3b8;
+            border-color: #f59e0b;
+            background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
             transform: translateY(-1px);
-            box-shadow: 0 16px 24px -18px rgba(30, 41, 59, 0.5);
+            box-shadow: 0 18px 30px -24px rgba(245, 158, 11, 0.45);
         }
         .tool-select:focus {
             outline: none;
-            border-color: #64748b;
-            box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.24);
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
         }
         .tool-select option {
             font-size: 15px;
@@ -1866,8 +1876,9 @@
             will-change: transform;
         }
         .map-canvas.leaflet-container {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
         }
         .map-hint {
             position: absolute;
@@ -3065,8 +3076,6 @@
   }
 
   #header,
-  #siteHeader,
-  .nav-container,
   .hero-card,
   .cta-strip,
   .trust-row {
@@ -3655,6 +3664,24 @@
   }
 }
 
+@media (max-width: 768px) {
+  #siteHeader,
+  #siteHeader .nav-container {
+    display: block !important;
+  }
+
+  #siteFooter,
+  #siteFooter .lb-footer-pro,
+  #siteFooter .footer-glass,
+  #siteFooter .footer-grid {
+    display: block !important;
+  }
+
+  #siteFooter .footer-grid {
+    overflow: visible !important;
+  }
+}
+
 
 @media (max-width: 768px) {
   .store-tools {
@@ -3726,29 +3753,45 @@
 
   .mobile-filter-select {
     width: 100%;
-    min-height: 38px;
-    border: 1px solid #c7d2e3;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #334155;
+    min-height: 42px;
+    border: 1px solid #d6deea;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    color: #1e293b;
     font-size: 11px;
     font-weight: 700;
-    padding: 7px 28px 7px 10px;
+    padding: 9px 34px 9px 12px;
     appearance: none;
     -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.25L6 6.25L11 1.25' stroke='%23334155' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.25L6 6.25L11 1.25' stroke='%231e293b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 10px center;
+    background-position: right 12px center;
     background-size: 10px;
+    box-shadow: 0 12px 24px -22px rgba(15, 23, 42, 0.45);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  }
+
+  .mobile-filter-select:hover {
+    border-color: #f59e0b;
+    background: linear-gradient(180deg, #ffffff 0%, #fff7ed 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 16px 28px -24px rgba(245, 158, 11, 0.42);
+  }
+
+  .mobile-filter-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.2);
   }
 }
 
 @media (max-width: 420px) {
   .mobile-filter-select {
-    min-height: 36px;
+    min-height: 40px;
     font-size: 10px;
-    padding: 7px 26px 7px 9px;
-    background-position: right 9px center;
+    padding: 8px 30px 8px 10px;
+    background-position: right 10px center;
   }
   .mobile-filter-trigger {
     min-width: 76px;
@@ -4062,23 +4105,153 @@
   <script src="../../js/auth.js"></script>
   <script src="../../js/cart.js"></script>
   <script src="../../js/theme.js"></script>
+  <script>
+    (function () {
+      var rootBase = String(window.LB_BASE_PATH || "").replace(/\/+$/, "");
+      if (!rootBase) {
+        var path = String(window.location.pathname || "").replace(/\\/g, "/");
+        rootBase = path.indexOf("/frontend/") !== -1 ? "/frontend" : "";
+      }
+
+      function withRoot(pathname) {
+        return rootBase + "/" + String(pathname || "").replace(/^\/+/, "");
+      }
+
+      function applySharedBindings(scope) {
+        if (!scope) return;
+
+        scope.querySelectorAll("[data-lb-href]").forEach(function (el) {
+          var target = String(el.getAttribute("data-lb-href") || "").trim();
+          if (target) el.setAttribute("href", withRoot("welcome/" + target.replace(/^\/+/, "")));
+        });
+
+        scope.querySelectorAll("[data-lb-src]").forEach(function (el) {
+          var target = String(el.getAttribute("data-lb-src") || "").trim();
+          if (target) el.setAttribute("src", withRoot("welcome/" + target.replace(/^\/+/, "")));
+        });
+
+        scope.querySelectorAll("a[href^='/welcome/'], img[src^='/welcome/']").forEach(function (el) {
+          var attr = el.tagName === "IMG" ? "src" : "href";
+          var current = String(el.getAttribute(attr) || "").trim();
+          if (!current) return;
+          el.setAttribute(attr, withRoot(current));
+        });
+      }
+
+      async function injectPart(hostId, fileName) {
+        var host = document.getElementById(hostId);
+        if (!host) return;
+        if (host.children.length || String(host.innerHTML || "").trim()) return;
+
+        var candidates = [
+          withRoot("components/" + fileName),
+          withRoot("welcome/includes/" + fileName),
+          "/components/" + fileName,
+          "/welcome/includes/" + fileName
+        ].filter(function (value, index, list) {
+          return value && list.indexOf(value) === index;
+        });
+
+        for (var i = 0; i < candidates.length; i += 1) {
+          try {
+            var res = await fetch(candidates[i], { cache: "no-store" });
+            if (!res.ok) continue;
+            host.innerHTML = await res.text();
+            applySharedBindings(host);
+            return;
+          } catch (err) {}
+        }
+      }
+
+      function bindFallbackUi() {
+        if (window.initAuth) window.initAuth();
+        if (window.initCart) window.initCart();
+        if (window.initTheme) window.initTheme();
+
+        ["locBtn", "mobileLocBtn", "mobileHeaderSummary", "lbFooterLocBtn"].forEach(function (id) {
+          var btn = document.getElementById(id);
+          if (!btn || btn.dataset.lbFallbackLocBound === "1") return;
+          btn.addEventListener("click", function (e) {
+            if (e) e.preventDefault();
+            var modal = document.getElementById("locationModal");
+            if (modal) {
+              modal.style.display = "flex";
+              return;
+            }
+            if (window.getLocation) window.getLocation();
+          });
+          btn.dataset.lbFallbackLocBound = "1";
+        });
+
+        var mobileHeaderAction = document.getElementById("mobileHeaderAction");
+        if (mobileHeaderAction && mobileHeaderAction.dataset.lbFallbackAuthBound !== "1") {
+          mobileHeaderAction.addEventListener("click", function () {
+            var loginBtn = document.getElementById("loginBtn");
+            if (loginBtn) loginBtn.click();
+          });
+          mobileHeaderAction.dataset.lbFallbackAuthBound = "1";
+        }
+
+        var footerTopBtn = document.getElementById("lbFooterTopBtn");
+        if (footerTopBtn && footerTopBtn.dataset.lbFallbackTopBound !== "1") {
+          footerTopBtn.addEventListener("click", function (e) {
+            if (e) e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+          footerTopBtn.dataset.lbFallbackTopBound = "1";
+        }
+
+        var adminBtn = document.getElementById("lbAdminLoginBtn");
+        if (adminBtn && adminBtn.dataset.lbFallbackAdminBound !== "1") {
+          adminBtn.addEventListener("click", function (e) {
+            if (e) e.preventDefault();
+            var overlay = document.getElementById("lbAdminPopupOverlay");
+            if (!overlay) return;
+            overlay.hidden = false;
+            document.body.style.overflow = "hidden";
+            var emailInput = document.getElementById("lbAdminEmail");
+            if (emailInput) {
+              window.setTimeout(function () {
+                try { emailInput.focus(); } catch (err) {}
+              }, 0);
+            }
+          });
+          adminBtn.dataset.lbFallbackAdminBound = "1";
+        }
+      }
+
+      function watchSharedShell(hostId) {
+        var host = document.getElementById(hostId);
+        if (!host || host.dataset.lbFallbackWatchBound === "1" || !("MutationObserver" in window)) return;
+
+        var timer = 0;
+        var observer = new MutationObserver(function () {
+          window.clearTimeout(timer);
+          timer = window.setTimeout(function () {
+            bindFallbackUi();
+          }, 30);
+        });
+
+        observer.observe(host, { childList: true, subtree: true });
+        host.dataset.lbFallbackWatchBound = "1";
+      }
+
+      async function ensureSharedShell() {
+        await injectPart("siteHeader", "header.html");
+        await injectPart("siteFooter", "footer.html");
+        watchSharedShell("siteHeader");
+        watchSharedShell("siteFooter");
+        bindFallbackUi();
+      }
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ensureSharedShell, { once: true });
+      } else {
+        ensureSharedShell();
+      }
+
+      window.setTimeout(ensureSharedShell, 600);
+    })();
+  </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

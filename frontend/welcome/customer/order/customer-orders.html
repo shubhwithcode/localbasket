@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="/js/config.js"></script>
-<base href="/" />
+  <script>
+    (function () {
+      var path = String(window.location.pathname || "").replace(/\\/g, "/");
+      var basePath = path.indexOf("/frontend/") !== -1 ? "/frontend/" : "/";
+      var baseEl = document.createElement("base");
+      baseEl.href = basePath;
+      document.head.appendChild(baseEl);
+      window.LB_BASE_PATH = basePath.replace(/\/$/, "");
+    })();
+  </script>
+  <script src="js/config.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>My Orders | Local Basket</title>
 
-  <link rel="stylesheet" href="/css/header-footer.css">
+  <link rel="stylesheet" href="css/header-footer.css">
   <link rel="icon" type="image/png" href="./welcome/logo2.png?v=20260303">
 
   <style>

@@ -3,6 +3,14 @@ const seller = JSON.parse(localStorage.getItem("lbSeller"));
 if (!seller || !seller.id) {
   window.location.href = "/welcome/seller/seller-auth/seller-auth.html";
 }
+const sellerToken = String(seller?.token || localStorage.getItem("lbSellerToken") || "").trim();
+const authFetch = (url, options = {}) => {
+  const headers = new Headers(options.headers || {});
+  if (sellerToken && !headers.has("Authorization") && /\/api\/seller(\/|$)/.test(String(url || ""))) {
+    headers.set("Authorization", `Bearer ${sellerToken}`);
+  }
+  return fetch(url, { ...options, headers });
+};
 
 /* ================= THEME ================= */
 const theme = localStorage.getItem("theme") || "light";
@@ -16,7 +24,7 @@ function toggleTheme() {
 /* ================= FETCH DASHBOARD DATA ================= */
 async function loadSellerDashboard() {
   try {
-    const res = await fetch(
+    const res = await authFetch(
       `${window.API_BASE_URL}/api/seller/dashboard/${seller.id}`
     );
     const data = await res.json();
@@ -58,6 +66,7 @@ function bindIfExists(id, value) {
 /* ================= LOGOUT ================= */
 function sellerLogout() {
   localStorage.removeItem("lbSeller");
+  localStorage.removeItem("lbSellerToken");
   window.location.href = "/welcome/seller/seller-auth/seller-auth.html";
 }
 

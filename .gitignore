@@ -5,6 +5,7 @@ frontend/node_modules/
 
 # Environment
 .env
+backend/.env
 
 # Build folders
 /build
@@ -14,3 +15,8 @@ frontend/node_modules/
 .idea
 .gradle
 .DS_Store
+
+# Local runtime files
+.mysql-data/
+backend-start.err.log
+backend-start.out.log

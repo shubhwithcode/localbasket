@@ -2,6 +2,14 @@
 // Note: API_BASE Dashboard se match hona chahiye (/api)
 const API_BASE = `${window.API_BASE_URL}/api`; 
 const seller = JSON.parse(localStorage.getItem("lbSeller"));
+const sellerToken = String(seller?.token || localStorage.getItem("lbSellerToken") || "").trim();
+const authFetch = (url, options = {}) => {
+    const headers = new Headers(options.headers || {});
+    if (sellerToken && !headers.has("Authorization") && /\/api\/seller(\/|$)/.test(String(url || ""))) {
+        headers.set("Authorization", `Bearer ${sellerToken}`);
+    }
+    return fetch(url, { ...options, headers });
+};
 
 if (!seller || !seller.id) {
     window.location.href = "/welcome/seller/seller-auth/seller-auth.html";
@@ -435,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function fetchOrders() {
     try {
         // Pull seller orders directly from seller route.
-        const res = await fetch(`${API_BASE}/seller/orders/${seller.id}`);
+        const res = await authFetch(`${API_BASE}/seller/orders/${seller.id}`);
         const data = await res.json();
         
         if (data.orders) {
@@ -670,7 +678,7 @@ window.processUpdate = async (orderId, newStatus, currentStatus = "") => {
         }
 
         try {
-            const res = await fetch(`${API_BASE}/seller/orders/${orderId}/status`, {
+            const res = await authFetch(`${API_BASE}/seller/orders/${orderId}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -747,7 +755,7 @@ window.processUpdate = async (orderId, newStatus, currentStatus = "") => {
     }
 
     try {
-        const res = await fetch(`${API_BASE}/seller/orders/${orderId}/status`, {
+        const res = await authFetch(`${API_BASE}/seller/orders/${orderId}/status`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

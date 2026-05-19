@@ -622,6 +622,14 @@
 /* ================= AUTH ================= */
 const seller = JSON.parse(localStorage.getItem("lbSeller"));
 if (!seller) location.href = "/welcome/seller/seller-auth/seller-auth.html";
+const sellerToken = String(seller?.token || localStorage.getItem("lbSellerToken") || "").trim();
+const authFetch = (url, options = {}) => {
+  const headers = new Headers(options.headers || {});
+  if (sellerToken && !headers.has("Authorization") && /\/api\/seller(\/|$)/.test(String(url || ""))) {
+    headers.set("Authorization", `Bearer ${sellerToken}`);
+  }
+  return fetch(url, { ...options, headers });
+};
 
 /* ================= STATE ================= */
 const tableBody = document.getElementById("productTable");
@@ -729,7 +737,7 @@ if (editImageInput) {
 
 async function loadMyProducts() {
   try {
-    const res = await fetch(`${PRODUCTS_ENDPOINT}?seller_id=${seller.id}`);
+    const res = await authFetch(`${PRODUCTS_ENDPOINT}?seller_id=${seller.id}`);
     const data = await res.json();
 
     tableBody.innerHTML = "";
@@ -906,7 +914,7 @@ document.getElementById("editForm").addEventListener("submit", async (e) => {
   }
 
   try {
-    const res = await fetch(`${PRODUCTS_ENDPOINT}/${payload.id}`, {
+    const res = await authFetch(`${PRODUCTS_ENDPOINT}/${payload.id}`, {
       method: "PUT",
       body: fd
     });
@@ -940,7 +948,7 @@ document.getElementById("confirmDelBtn").onclick = async () => {
   if (!deleteId) return;
 
   try {
-    const res = await fetch(`${PRODUCTS_ENDPOINT}/${deleteId}`, {
+    const res = await authFetch(`${PRODUCTS_ENDPOINT}/${deleteId}`, {
       method: "DELETE"
     });
 

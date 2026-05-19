@@ -2,27 +2,48 @@
   const ADMIN_AUTH_KEY = "lbAdminAuth";
   const ADMIN_LOGIN_REDIRECT_FLAG = "lbOpenAdminLoginAfterRedirect";
   const ADMIN_RETURN_PATH_KEY = "lbAdminReturnPath";
-  const isAdminAuthenticated = () => {
+  const readAdminAuth = () => {
     try {
       const raw = localStorage.getItem(ADMIN_AUTH_KEY);
-      if (!raw) return false;
+      if (!raw) return null;
       const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object") return false;
-      const expiresAt = Number(parsed.expiresAt || 0);
-      if (expiresAt && Date.now() > expiresAt) {
+      if (!parsed || typeof parsed !== "object") return null;
+      const expiresAtMs = Number(parsed.expiresAt || parsed.expires_at_ms || 0);
+      if (expiresAtMs && Date.now() > expiresAtMs) {
         localStorage.removeItem(ADMIN_AUTH_KEY);
-        return false;
+        return null;
       }
-      return true;
+      return parsed;
     } catch {
-      return false;
+      return null;
     }
+  };
+
+  const isAdminAuthenticated = () => {
+    const session = readAdminAuth();
+    return !!(session && String(session.token || "").trim());
   };
 
   const clearAdminAuth = () => {
     localStorage.removeItem(ADMIN_AUTH_KEY);
     localStorage.removeItem("admin_token");
   };
+
+  const withAdminAuthHeaders = (input, init = {}) => {
+    const url = typeof input === "string" ? input : String(input?.url || "");
+    if (!/\/api\/admin(\/|$)/.test(url)) return init;
+    const session = readAdminAuth();
+    const token = String(session?.token || localStorage.getItem("admin_token") || "").trim();
+    if (!token) return init;
+    const headers = new Headers(init.headers || {});
+    if (!headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    return { ...init, headers };
+  };
+
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init = {}) => nativeFetch(input, withAdminAuthHeaders(input, init));
 
   if (!isAdminAuthenticated()) {
     clearAdminAuth();

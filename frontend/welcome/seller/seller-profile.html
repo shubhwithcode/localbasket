@@ -563,6 +563,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   /* AUTH CHECK */
   const seller = JSON.parse(localStorage.getItem("lbSeller"));
+  const sellerToken = String(seller?.token || localStorage.getItem("lbSellerToken") || "").trim();
+  const authFetch = (url, options = {}) => {
+    const headers = new Headers(options.headers || {});
+    if (sellerToken && !headers.has("Authorization") && /\/api\/seller(\/|$)/.test(String(url || ""))) {
+      headers.set("Authorization", `Bearer ${sellerToken}`);
+    }
+    return fetch(url, { ...options, headers });
+  };
   if(!seller) { location.href = "/welcome/seller/seller-auth/seller-auth.html"; return; }
   const initProfileTabs = () => {
     const tabs = document.querySelectorAll(".profile-tabs .tab-btn");
@@ -663,7 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveProfileBtn.disabled = true;
         saveProfileBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Saving...`;
       }
-      const res = await fetch(`${window.API_BASE_URL}/api/seller/update-profile`, { method:"POST", body:fd });
+      const res = await authFetch(`${window.API_BASE_URL}/api/seller/update-profile`, { method:"POST", body:fd });
       const data = await res.json().catch(() => null);
       if(data && data.success) {
         Object.assign(seller, {
@@ -718,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ok = await window.lbConfirm("Remove store image?");
     if(!ok) return;
     try {
-      const res = await fetch(`${window.API_BASE_URL}/api/seller/remove-store-image`, {
+      const res = await authFetch(`${window.API_BASE_URL}/api/seller/remove-store-image`, {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ seller_id:seller.id })
@@ -748,7 +756,7 @@ themeToggle.onchange = () => {
 if(localStorage.getItem('theme') === 'dark') { themeToggle.checked = true; document.body.classList.add('dark'); }
 
 function go(p){ location.href=p }
-function logout(){ localStorage.removeItem("lbSeller"); location.href = "/welcome/seller/seller-auth/seller-auth.html"; }
+function logout(){ localStorage.removeItem("lbSeller"); localStorage.removeItem("lbSellerToken"); location.href = "/welcome/seller/seller-auth/seller-auth.html"; }
 </script>
   <div id="footer"></div>
   <script src="/js/include.js?v=20260313a"></script>

@@ -616,13 +616,19 @@
     </div>
   </main>
   <script>
-    const target = "./welcome/customer/index.html";
+    const target = (() => {
+      const path = String(window.location.pathname || "").replace(/\\/g, "/");
+      return path.includes("/frontend/")
+        ? "/frontend/welcome/customer/index.html"
+        : "./welcome/customer/index.html";
+    })();
     const card = document.getElementById("launchCard");
     const enterBtn = document.getElementById("enterBtn");
     const countdownEl = document.getElementById("countdown");
     const tipEl = document.getElementById("tip");
     const surface = document.querySelector(".card-surface");
     const pctEl = document.getElementById("pct");
+    if (enterBtn) enterBtn.href = target;
 
     // Prevent in-page "launch overlays" (e.g. from `js/include.js`) so users don't
     // experience a second launch screen after redirect.

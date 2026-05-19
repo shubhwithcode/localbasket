@@ -1596,19 +1596,27 @@ html.lb-theme-dark .lb-nav-theme .lb-nav-text {
 }
 
 .lb-footer-pro .footer-social {
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 0;
 }
 
 .lb-footer-pro .footer-social a {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+  min-width: 112px;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   font-size: 13px;
   font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  letter-spacing: -0.1px;
   transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
@@ -2159,14 +2167,10 @@ html.lb-theme-dark .lb-nav-theme .lb-nav-text {
     background: rgba(255, 255, 255, 0.18);
   }
   .lb-footer-pro .footer-social a {
-    width: 34px;
-    height: 34px;
+    min-width: 104px;
+    height: 40px;
+    padding: 0 12px;
     border-radius: 12px;
-    font-size: 14px;
-  }
-  .lb-footer-pro .footer-social a:last-child {
-    width: auto;
-    min-width: 44px;
     padding: 0 10px;
     font-size: 13px;
   }

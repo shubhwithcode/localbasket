@@ -1,4 +1,16 @@
 (() => {
+  const LB_ROOT_BASE = (() => {
+    const fromWindow = String(window.LB_BASE_PATH || "").trim();
+    if (fromWindow) return fromWindow.replace(/\/+$/, "");
+    const path = String(window.location.pathname || "").replace(/\\/g, "/");
+    return path.includes("/frontend/") ? "/frontend" : "";
+  })();
+  const withRootBase = (target) => {
+    const clean = `/${String(target || "").replace(/^\/+/, "")}`;
+    return `${LB_ROOT_BASE}${clean}`;
+  };
+  const welcomePath = (suffix) => withRootBase(`/welcome/${String(suffix || "").replace(/^\/+/, "")}`);
+
   const ensureLaunchOverlay = () => {
     // The site already has a dedicated launch page at `/frontend/index.html`.
     // Showing another full-screen "launch" overlay inside pages feels like a
@@ -2804,7 +2816,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (document.querySelector('link[data-lb-shared-style="header-footer"]')) return;
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "/css/header-footer.css";
+    link.href = withRootBase("/css/header-footer.css");
     link.setAttribute("data-lb-shared-style", "header-footer");
     document.head.appendChild(link);
   }
@@ -2816,12 +2828,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     scope.querySelectorAll("[data-lb-href]").forEach((el) => {
       const target = (el.getAttribute("data-lb-href") || "").trim();
       if (!target) return;
-      el.setAttribute("href", `/welcome/${target.replace(/^\/+/, "")}`);
+      el.setAttribute("href", welcomePath(target));
     });
     scope.querySelectorAll("[data-lb-src]").forEach((el) => {
       const target = (el.getAttribute("data-lb-src") || "").trim();
       if (!target) return;
-      el.setAttribute("src", `/welcome/${target.replace(/^\/+/, "")}`);
+      el.setAttribute("src", welcomePath(target));
     });
   }
 
@@ -3353,8 +3365,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Ensure spacing after footer/nav injection.
     syncBottomNavSpacing();
 
-    const welcomePath = (suffix) => `/welcome/${String(suffix || "").replace(/^\/+/, "")}`;
-
     if (!document.body.dataset.lbHrefDelegateBound) {
       document.addEventListener("click", (e) => {
         const el = e.target.closest("[data-lb-href]");
@@ -3467,14 +3477,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     };
 
-    const saveAdminAuth = (userId) => {
-      const now = Date.now();
+    const saveAdminAuth = (auth, userId) => {
+      const expiresAtMs = Date.parse(String(auth?.expires_at || "")) || (Date.now() + 12 * 60 * 60 * 1000);
       const session = {
-        userId: String(userId || "admin").trim() || "admin",
-        loggedInAt: now,
-        expiresAt: now + (12 * 60 * 60 * 1000)
+        userId: String(userId || auth?.email || "admin").trim() || "admin",
+        token: String(auth?.token || "").trim(),
+        role: String(auth?.role || "admin").trim() || "admin",
+        tokenType: String(auth?.token_type || "Bearer").trim() || "Bearer",
+        loggedInAt: Date.now(),
+        expiresAt: expiresAtMs,
+        expires_at_ms: expiresAtMs,
+        expires_at: String(auth?.expires_at || "")
       };
       localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify(session));
+      if (session.token) localStorage.setItem("admin_token", session.token);
     };
 
     const goAdminDashboard = () => {
@@ -3622,7 +3638,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           if (!out.res.ok || !out.data?.success) {
             throw new Error(out.data?.message || `Verify failed (${out.res.status})`);
           }
-          saveAdminAuth(email);
+          saveAdminAuth(out.data?.auth || { token: out.data?.token, role: "admin" }, email);
           closeAdminPopup();
           goAdminDashboard();
         } catch (err) {

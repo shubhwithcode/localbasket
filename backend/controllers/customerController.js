@@ -1,23 +1,22 @@
 const db = require("../db/connection");
 const bcrypt = require("bcrypt");
 const util = require("util");
-const jwt = require("jsonwebtoken");
 const https = require("https");
 const nodemailer = require("nodemailer");
+const { buildAuthSession, readBearerToken, verifyAuthToken, ROLE_CUSTOMER } = require("../utils/authTokens");
 
 const query = util.promisify(db.query).bind(db);
-
-const JWT_SECRET = process.env.JWT_SECRET || "localbasket_dev_secret";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const customerOtpStore = new Map();
 
 const signToken = (customer) => {
-  return jwt.sign(
-    { id: customer.id, phone: customer.phone },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  return buildAuthSession({
+    role: ROLE_CUSTOMER,
+    id: customer.id,
+    phone: customer.phone,
+    email: customer.email,
+    name: customer.name
+  });
 };
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
@@ -274,12 +273,13 @@ exports.register = async (req, res) => {
       phone
     };
 
-    const token = signToken(user);
+    const session = signToken(user);
 
     res.status(201).json({
       success: true,
       message: "Customer registered successfully",
-      token,
+      token: session.token,
+      auth: session,
       user
     });
   } catch (err) {
@@ -364,12 +364,13 @@ exports.login = async (req, res) => {
       phone: customer.phone
     };
 
-    const token = signToken(user);
+    const session = signToken(user);
 
     res.json({
       success: true,
       message: "Login successful",
-      token,
+      token: session.token,
+      auth: session,
       user
     });
   } catch (err) {
@@ -524,12 +525,13 @@ exports.verifyLoginOtp = async (req, res) => {
       email: customer.email,
       phone: customer.phone
     };
-    const token = signToken(user);
+    const session = signToken(user);
 
     res.json({
       success: true,
       message: "OTP login successful",
-      token,
+      token: session.token,
+      auth: session,
       user
     });
   } catch (err) {
@@ -778,8 +780,7 @@ exports.updateProfile = async (req, res) => {
    AUTH MIDDLEWARE
 ===================================================== */
 exports.requireAuth = (req, res, next) => {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  const token = readBearerToken(req.headers.authorization || "");
 
   if (!token) {
     return res.status(401).json({
@@ -789,7 +790,13 @@ exports.requireAuth = (req, res, next) => {
   }
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = verifyAuthToken(token);
+    if (payload?.role !== ROLE_CUSTOMER) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid customer token"
+      });
+    }
     req.user = payload;
     next();
   } catch {

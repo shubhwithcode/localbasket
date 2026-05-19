@@ -14,9 +14,28 @@ const ADMIN_API_BASE_CANDIDATES = [
   `${window.API_BASE_URL}/api/admin`,
   `${window.API_BASE_URL}/api/admin`
 ];
+const getSellerSession = () => {
+  try {
+    return JSON.parse(localStorage.getItem("lbSeller") || "null");
+  } catch {
+    return null;
+  }
+};
+const getSellerToken = () => {
+  const seller = getSellerSession();
+  return String(seller?.token || localStorage.getItem("lbSellerToken") || "").trim();
+};
+const authFetch = (url, options = {}) => {
+  const token = getSellerToken();
+  const headers = new Headers(options.headers || {});
+  if (token && !headers.has("Authorization") && /\/api\/seller(\/|$)/.test(String(url || ""))) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(url, { ...options, headers });
+};
 
 const getJson = async (url, options) => {
-  const res = await fetch(url, options);
+  const res = await authFetch(url, options);
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.message || res.statusText || "Request failed");
   return data;

@@ -970,6 +970,10 @@ function syncLocationMapSize() {
     const run = () => {
         const mapEl = dom.mapFrame();
         if (mapEl && (mapEl.offsetWidth < 40 || mapEl.offsetHeight < 40)) return;
+        if (mapEl) {
+            mapEl.style.width = "100%";
+            mapEl.style.height = "100%";
+        }
         locationMap.invalidateSize({ pan: false, animate: false });
         redrawTiles();
         if (locationMarker && typeof locationMarker.getLatLng === "function") {
@@ -977,7 +981,12 @@ function syncLocationMapSize() {
             locationMap.setView([p.lat, p.lng], locationMap.getZoom() || 13, { animate: false });
         }
     };
-    [0, 90, 220, 420, 700].forEach((ms) => setTimeout(run, ms));
+    [0, 90, 220, 420, 700, 1000].forEach((ms) => setTimeout(run, ms));
+}
+
+function ensureLocationMapReady() {
+    initLocationMap();
+    syncLocationMapSize();
 }
 
 function updateMobileSortButtons() {
@@ -1077,7 +1086,7 @@ function setupEventListeners() {
             getLocation();
         });
     }
-    window.addEventListener("lb-location-modal-opened", syncLocationMapSize);
+    window.addEventListener("lb-location-modal-opened", ensureLocationMapReady);
     window.addEventListener("resize", () => {
         if (isLocationModalVisible()) syncLocationMapSize();
     }, { passive: true });
@@ -1845,6 +1854,9 @@ function setCachedGeoResult(payload) {
 function initLocationMap() {
     const mapEl = dom.mapFrame();
     if (!mapEl || locationMap || typeof window.L === "undefined") return;
+
+    mapEl.style.width = "100%";
+    mapEl.style.height = "100%";
 
     const savedLat = Number(localStorage.getItem("lbLocLat") || 19.076);
     const savedLon = Number(localStorage.getItem("lbLocLon") || 72.8777);
