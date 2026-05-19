@@ -12,9 +12,16 @@ const IS_LOCAL_HOST =
 const localApiOrigin = window.location.protocol === "file:" ? "http://localhost:5000" : `${window.location.protocol}//${host}:5000`;
 const API_BASE_URL = (() => {
     const stored = (typeof localStorage !== "undefined" && localStorage.getItem("lbApiBase")) || "";
-    const byWindow = window.API_BASE_URL || window.LB_API_BASE || "";
     const byOrigin = window.location.protocol === "file:" ? localApiOrigin : window.location.origin;
-    const preferred = byWindow || stored || byOrigin;
+    const isHosted = !IS_LOCAL_HOST;
+    const isLoopbackBase = (value) => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(String(value || "").trim().replace(/\/+$/, ""));
+    const byWindow = String(window.API_BASE_URL || window.LB_API_BASE || "").trim();
+    const safeWindowBase = isHosted && isLoopbackBase(byWindow) ? "" : byWindow;
+    const safeStoredBase = isHosted && isLoopbackBase(stored) ? "" : stored;
+    if (isHosted && stored && isLoopbackBase(stored)) {
+        try { localStorage.removeItem("lbApiBase"); } catch {}
+    }
+    const preferred = safeWindowBase || safeStoredBase || byOrigin;
     const clean = String(preferred || byOrigin).trim().replace(/\/+$/, "");
     window.API_BASE_URL = clean;
     return clean;

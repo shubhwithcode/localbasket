@@ -9,9 +9,15 @@ const isVercelHost = host.endsWith(".vercel.app");
 const localOrigin = window.location.protocol === "file:" ? "http://localhost:5000" : `${window.location.protocol}//${host}:5000`;
 const API_BASE_URL = (() => {
   const stored = (typeof localStorage !== "undefined" && localStorage.getItem("lbApiBase")) || "";
-  const byWindow = window.API_BASE_URL || window.LB_API_BASE || "";
+  const isLoopbackBase = (value) => /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?$/i.test(String(value || "").trim().replace(/\/+$/, ""));
+  const byWindow = String(window.API_BASE_URL || window.LB_API_BASE || "").trim();
   const byOrigin = window.location.protocol === "file:" ? localOrigin : window.location.origin;
-  const preferred = byWindow || stored || byOrigin;
+  const safeWindowBase = !isLocalHost && isLoopbackBase(byWindow) ? "" : byWindow;
+  const safeStoredBase = !isLocalHost && isLoopbackBase(stored) ? "" : stored;
+  if (!isLocalHost && stored && isLoopbackBase(stored)) {
+    try { localStorage.removeItem("lbApiBase"); } catch {}
+  }
+  const preferred = safeWindowBase || safeStoredBase || byOrigin;
   const clean = String(preferred || byOrigin).trim().replace(/\/+$/, "");
   window.API_BASE_URL = clean;
   return clean;
