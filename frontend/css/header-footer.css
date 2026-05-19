@@ -1794,7 +1794,13 @@ html.lb-theme-dark .lb-nav-theme .lb-nav-text {
     border: none;
   }
   .footer-support,
-  .footer-news {
+  .footer-news,
+  .footer-brand,
+  .footer-col,
+  .footer-seller {
+    display: none;
+  }
+  .lb-footer-pro .footer-grid {
     display: none;
   }
   .footer-badges,
