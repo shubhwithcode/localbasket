@@ -83,7 +83,14 @@ const notifyOrderPlaced = async ({
       [sellerId, customerId]
     );
     const row = rows && rows[0];
-    if (!row || !row.customer_email) return;
+    if (!row) {
+      console.warn("ORDER PLACED EMAIL SKIPPED: customer/store lookup returned no row", { orderId, customerId, sellerId });
+      return;
+    }
+    if (!row.customer_email) {
+      console.warn("ORDER PLACED EMAIL SKIPPED: customer email missing", { orderId, customerId });
+      return;
+    }
 
     const mail = await sendOrderPlacedEmail({
       customerName: row.customer_name || customerName,
@@ -128,7 +135,14 @@ const notifyOrderDelivered = async ({ orderId, paymentStatusOverride }) => {
       [orderId]
     );
     const row = rows && rows[0];
-    if (!row || !row.customer_email) return;
+    if (!row) {
+      console.warn("ORDER DELIVERED EMAIL SKIPPED: order lookup returned no row", { orderId });
+      return;
+    }
+    if (!row.customer_email) {
+      console.warn("ORDER DELIVERED EMAIL SKIPPED: customer email missing", { orderId });
+      return;
+    }
 
     const mail = await sendOrderDeliveredEmail({
       customerName: row.customer_name,
@@ -198,7 +212,7 @@ try {
 /* =====================================================
    1ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¯ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¸ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ£ CREATE ORDER
 ===================================================== */
-exports.createOrder = (req, res) => {
+exports.createOrder = async (req, res) => {
   const {
     seller_id,
     customer_id,
@@ -257,7 +271,7 @@ exports.createOrder = (req, res) => {
     "PLACED"
   ];
 
-  db.query(sql, values, (err, result) => {
+  db.query(sql, values, async (err, result) => {
     if (err) {
       console.error("ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¢ÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ ORDER CREATE ERROR:", err.sqlMessage);
       return res.status(500).json({
@@ -266,13 +280,7 @@ exports.createOrder = (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      order_id: result.insertId,
-      delivery_otp: deliveryOtp
-    });
-
-    void notifyOrderPlaced({
+    await notifyOrderPlaced({
       orderId: result.insertId,
       customerId: customer_id,
       customerName,
@@ -284,6 +292,12 @@ exports.createOrder = (req, res) => {
       paymentStatus: payment_status || "PENDING",
       fallbackPhone: phone,
       sellerId: seller_id
+    });
+
+    res.json({
+      success: true,
+      order_id: result.insertId,
+      delivery_otp: deliveryOtp
     });
   });
   };
@@ -652,7 +666,7 @@ exports.updateOrderStatus = (req, res) => {
           .slice(0, params.length - 1)
           .concat([nextPaymentStatus, order_id]);
 
-        return db.query(deliveredSql, deliveredParams, (err1, result) => {
+        return db.query(deliveredSql, deliveredParams, async (err1, result) => {
           if (err1) {
             console.error("DELIVERED STATUS UPDATE ERROR:", err1.sqlMessage || err1.message || err1);
             return res.status(500).json({ success: false });
@@ -660,7 +674,7 @@ exports.updateOrderStatus = (req, res) => {
           if (!result || result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: "Order not found" });
           }
-          void notifyOrderDelivered({ orderId: order_id, paymentStatusOverride: nextPaymentStatus });
+          await notifyOrderDelivered({ orderId: order_id, paymentStatusOverride: nextPaymentStatus });
           return res.json({ success: true, payment_status: nextPaymentStatus });
         });
       }
