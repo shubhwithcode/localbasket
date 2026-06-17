@@ -1,7 +1,7 @@
 # LocalBasket 🛒
 
 ## 📌 About
-LocalBasket ek e-commerce web app hai jahan users nearby stores se products order kar sakte hain.
+LocalBasket - Local grocery marketplace connecting customers with nearby stores.
 
 ## 🚀 Features
 - Add to cart
